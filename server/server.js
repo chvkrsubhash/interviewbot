@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 // Load env variables immediately
 dotenv.config();
@@ -56,13 +57,14 @@ app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/candidate', candidateRouter);
 
-// Serve React client build (static assets)
-app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
-
-// Fallback to index.html for client-side routing (SPA)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
-});
+// Serve React client build (static assets) if it exists
+if (fs.existsSync(path.join(__dirname, '..', 'client', 'dist'))){
+  app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
+  // Fallback to index.html for client-side routing (SPA)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 
@@ -197,7 +199,7 @@ const startServer = (port) => {
     });
 };
 
-if (require.main === module) {
+if (require.main === module && !process.env.VERCEL) {
   const basePort = PORT ? parseInt(PORT, 10) : 5000;
   startServer(basePort);
 }
