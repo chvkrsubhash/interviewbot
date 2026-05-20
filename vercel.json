@@ -22,9 +22,7 @@
       "src": "/uploads/(.*)",
       "dest": "server/server.js"
     },
-    {
-      "handle": "filesystem"
-    },
+    { "handle": "filesystem" },
     {
       "src": "/(.*)",
       "dest": "/index.html"
