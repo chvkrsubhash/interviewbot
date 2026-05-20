@@ -99,11 +99,6 @@ export function Login() {
           Don't have an account?{' '}
           <Link to="/signup" className="font-bold text-primary-500 hover:text-primary-600 transition-colors">Create one free</Link>
         </p>
-
-        {/* Demo Hint */}
-        <div className="mt-6 p-3 rounded-xl bg-slate-100/60 dark:bg-dark-800/30 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold border border-slate-200/50 dark:border-slate-800/50">
-          💡 Try <code className="text-primary-500">recruiter@prepai.com</code> or <code className="text-primary-500">admin@prepai.com</code>
-        </div>
       </div>
     </div>
   );
@@ -377,10 +372,6 @@ export function OTPVerification() {
             {loading ? <RefreshCw className="animate-spin" size={18} /> : 'Confirm Verification'}
           </button>
         </form>
-
-        <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold border border-dashed border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-          💡 Demo Mode: Enter <code className="text-primary-500 font-bold">123456</code> to verify instantly.
-        </p>
       </div>
     </div>
   );

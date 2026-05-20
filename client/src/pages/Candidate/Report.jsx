@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../../components/Header';
 import {
-  FileText, Award, Calendar, CheckCircle2, XCircle, Share2, Clipboard, ArrowLeft,
-  ChevronRight, ThumbsUp, AlertCircle, Compass, Star, Loader2
+  Award, CheckCircle2, XCircle, Share2, Clipboard, ArrowLeft,
+  ChevronRight, ThumbsUp, AlertCircle, Compass, Star, Loader2, Sparkles, BrainCircuit
 } from 'lucide-react';
 
 export default function InterviewReport() {
@@ -18,18 +18,13 @@ export default function InterviewReport() {
     const fetchReport = async () => {
       setLoading(true);
       setError('');
-
-      // 1. Try fetching from the database first
       const token = localStorage.getItem('token');
       try {
         const response = await fetch(`/api/interview/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-
         if (response.ok) {
           const dbData = await response.json();
-
-          // Normalize DB data into the component's expected format
           const normalized = {
             id: dbData.id,
             title: dbData.title,
@@ -57,8 +52,6 @@ export default function InterviewReport() {
       } catch (err) {
         console.warn('DB fetch failed, trying localStorage:', err);
       }
-
-      // 2. Fallback to localStorage
       try {
         const stored = localStorage.getItem('completed_interviews');
         if (stored) {
@@ -73,15 +66,12 @@ export default function InterviewReport() {
       } catch (err) {
         console.warn('localStorage parse failed:', err);
       }
-
       setError('Report not found');
       setLoading(false);
     };
-
     fetchReport();
   }, [id]);
 
-  // Helper to safely parse JSON array fields
   const parseJsonField = (field, fallback) => {
     if (!field) return fallback;
     if (Array.isArray(field)) return field;
@@ -153,7 +143,6 @@ export default function InterviewReport() {
         >
           <ArrowLeft size={16} /> Return to Dashboard
         </button>
-
         <button
           onClick={handleShareClick}
           className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-dark-950 font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 shadow-md"
@@ -209,9 +198,9 @@ export default function InterviewReport() {
             <Star size={14} className="text-orange-500" />
           </div>
           <div className="py-3">
-            <div className="font-extrabold text-3xl text-slate-800 dark:text-white">{fb.confidence || fb.confidenceLevel || 0}%</div>
+            <div className="font-extrabold text-3xl text-slate-800 dark:text-white">{fb.confidence || 0}%</div>
             <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 mt-2 overflow-hidden">
-              <div className="h-full bg-orange-500 rounded-full transition-all duration-700" style={{ width: `${fb.confidence || fb.confidenceLevel || 0}%` }}></div>
+              <div className="h-full bg-orange-500 rounded-full transition-all duration-700" style={{ width: `${fb.confidence || 0}%` }}></div>
             </div>
           </div>
           <span className="text-[10px] text-slate-400 font-semibold">Analyzes speech pitch and volume levels</span>
@@ -227,7 +216,7 @@ export default function InterviewReport() {
           </h3>
           <div className="space-y-2">
             {(fb.strengths || []).map((str, index) => (
-              <div key={index} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-350 font-medium">
+              <div key={index} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300 font-medium">
                 <span className="text-emerald-500 font-bold mt-0.5">•</span>
                 <p>{str}</p>
               </div>
@@ -242,7 +231,7 @@ export default function InterviewReport() {
           </h3>
           <div className="space-y-2">
             {(fb.weaknesses || []).map((weak, index) => (
-              <div key={index} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-350 font-medium">
+              <div key={index} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300 font-medium">
                 <span className="text-rose-500 font-bold mt-0.5">•</span>
                 <p>{weak}</p>
               </div>
@@ -255,8 +244,8 @@ export default function InterviewReport() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-premium rounded-3xl p-6 space-y-3">
           <h4 className="font-bold text-sm text-slate-800 dark:text-white uppercase tracking-wider">Grammar & Articulation</h4>
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-350 leading-relaxed">
-            {fb.grammar || fb.grammarAnalysis || 'No grammar data recorded.'}
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+            {fb.grammar || 'No grammar data recorded.'}
           </p>
         </div>
 
@@ -287,22 +276,47 @@ export default function InterviewReport() {
         </div>
       </div>
 
-      {/* Full Session Transcript Q&A */}
+      {/* Full Session Transcript Q&A with AI Remarks */}
       {data.transcript && data.transcript.length > 0 && (
         <div className="glass-premium rounded-3xl p-6 space-y-6">
-          <h3 className="font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">Session Dialogue Transcript</h3>
-          <div className="space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <BrainCircuit size={20} className="text-primary-500" />
+            <h3 className="font-bold text-slate-800 dark:text-white">Session Dialogue Transcript</h3>
+            <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-primary-400 bg-primary-500/10 px-2.5 py-1 rounded-full flex items-center gap-1">
+              <Sparkles size={10} /> AI Critique Enabled
+            </span>
+          </div>
+          <div className="space-y-8">
             {data.transcript.map((item, index) => (
               <div key={index} className="space-y-3">
+                {/* Question Block */}
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-900/50 border border-slate-200/40 dark:border-slate-800/80">
                   <div className="text-[10px] font-bold uppercase text-primary-500 tracking-wider mb-1">Interviewer Q{index + 1}</div>
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 italic">"{item.question}"</p>
                 </div>
 
+                {/* Answer Block */}
                 <div className="p-4 rounded-2xl bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/30 dark:border-indigo-950/20 ml-6">
                   <div className="text-[10px] font-bold uppercase text-indigo-500 tracking-wider mb-1">Your Verbal Response</div>
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
                     {item.answer ? item.answer : <span className="text-slate-400 italic">No speech transcription logged.</span>}
+                  </p>
+                </div>
+
+                {/* AI Remarks Card */}
+                <div className="ml-6 p-4 rounded-2xl border border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/60 to-indigo-50/40 dark:from-violet-950/20 dark:to-indigo-950/10 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-400/10 to-transparent rounded-full -translate-y-6 translate-x-6 pointer-events-none" />
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-violet-500 to-indigo-500 flex items-center justify-center shadow-sm shadow-violet-500/30">
+                      <Sparkles size={11} className="text-white" />
+                    </div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-600 dark:text-violet-400">AI Critique</span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {item.remarks
+                      ? item.remarks
+                      : <span className="text-slate-400 italic text-xs">No individual question critique generated. Overall performance was satisfactory.</span>
+                    }
                   </p>
                 </div>
               </div>

@@ -235,9 +235,22 @@ if (hasEnvKeys || hasJsonFile) {
   } catch (error) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
     console.log('🔌 Falling back to local high-fidelity Firestore Mock DB...');
+    class FirebaseAuthMock {
+      async createUser(properties) {
+        return { uid: 'mock_uid_' + Math.random().toString(36).substring(2, 9), email: properties.email };
+      }
+      async getUserByEmail(email) {
+        return { uid: 'mock_uid', email };
+      }
+      async deleteUser(uid) {
+        return {};
+      }
+    }
+    const authMock = new FirebaseAuthMock();
     db = new FirestoreMock();
     admin = {
       firestore: () => db,
+      auth: () => authMock,
       credential: { cert: () => ({}) },
       initializeApp: () => {}
     };
@@ -246,9 +259,22 @@ if (hasEnvKeys || hasJsonFile) {
 } else {
   console.log('⚠️ Firebase credentials not configured in .env or server/config/serviceAccountKey.json.');
   console.log('🧪 Initializing high-fidelity local Firestore Mock DB (server/config/firestoreMockDb.json)...');
+  class FirebaseAuthMock {
+    async createUser(properties) {
+      return { uid: 'mock_uid_' + Math.random().toString(36).substring(2, 9), email: properties.email };
+    }
+    async getUserByEmail(email) {
+      return { uid: 'mock_uid', email };
+    }
+    async deleteUser(uid) {
+      return {};
+    }
+  }
+  const authMock = new FirebaseAuthMock();
   db = new FirestoreMock();
   admin = {
     firestore: () => db,
+    auth: () => authMock,
     credential: { cert: () => ({}) },
     initializeApp: () => {}
   };

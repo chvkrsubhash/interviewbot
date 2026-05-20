@@ -55,37 +55,30 @@ export default function InterviewSetup() {
     setParsing(true);
     setParsedData(null);
 
-    // Parse filename for basic domain detection (future: real PDF parser)
-    setTimeout(() => {
-      let detectedDomain = 'Frontend';
-      let detectedExp = 'Mid';
-      const lowercaseName = file.name.toLowerCase();
-
-      if (lowercaseName.includes('backend') || lowercaseName.includes('node') || lowercaseName.includes('python')) {
-        detectedDomain = 'Backend';
-      } else if (lowercaseName.includes('ai') || lowercaseName.includes('ml') || lowercaseName.includes('data')) {
-        detectedDomain = 'AI/ML';
-      } else if (lowercaseName.includes('design') || lowercaseName.includes('system')) {
-        detectedDomain = 'System Design';
-      } else if (lowercaseName.includes('dsa') || lowercaseName.includes('algo')) {
-        detectedDomain = 'DSA';
-      }
-
-      if (lowercaseName.includes('senior') || lowercaseName.includes('lead')) {
-        detectedExp = 'Senior';
-      } else if (lowercaseName.includes('junior') || lowercaseName.includes('intern')) {
-        detectedExp = 'Entry';
-      }
-
-      setParsedData({
-        detectedDomain,
-        detectedExp,
-        skills: ['React.js', 'Node.js', 'Express', 'SQLite', 'Problem Solving', 'Data Structures']
-      });
-      setDomain(detectedDomain);
-      setExperience(detectedExp);
-      setParsing(false);
-    }, 2000);
+    // Send file to backend for parsing
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('resume', file);
+    fetch('/api/candidate/parse-resume', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) {
+          throw new Error(data.message || 'Failed to parse resume');
+        }
+        setParsedData(data);
+        setDomain(data.detectedDomain);
+        setExperience(data.detectedExp);
+      })
+      .catch(err => {
+        setError(err.message);
+      })
+      .finally(() => setParsing(false));
   };
 
   const handleStartSimulation = async () => {

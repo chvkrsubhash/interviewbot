@@ -79,6 +79,12 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'OTP verification failed');
+
+      // Mark user as verified in local state and storage immediately
+      const updatedUser = { ...user, isVerified: true };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
       return true;
     } catch (error) {
       console.error('OTP verification error:', error);

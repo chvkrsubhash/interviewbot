@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const { applyQuery } = require('./User');
+const { executeEmulatedQuery } = require('./User');
 
 class Feedback {
   constructor(data) {
@@ -66,10 +66,9 @@ class Feedback {
 
 Feedback.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('feedbacks'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    return new Feedback({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('feedbacks'), queryObj);
+    if (docs.length === 0) return null;
+    return new Feedback(docs[0]);
   } catch (error) {
     console.error('Error in Feedback.findOne:', error.message);
     throw error;

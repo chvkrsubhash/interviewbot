@@ -26,6 +26,7 @@ import AdminTemplates from './pages/Admin/Templates';
 
 // Sidebar
 import Sidebar from './components/Sidebar';
+import GlobalAnnouncementBanner from './components/GlobalAnnouncementBanner';
 
 // Gate controls
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -46,6 +47,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-800 dark:text-dark-50 transition-colors duration-300">
+      {/* Global Announcement / Verification Banner */}
+      <GlobalAnnouncementBanner />
       {/* Persistent Left Sidebar */}
       <Sidebar />
       
@@ -216,6 +219,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminTemplates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/broadcast"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

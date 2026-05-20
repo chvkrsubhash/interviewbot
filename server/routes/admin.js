@@ -151,13 +151,22 @@ router.get('/plans', protect, adminOnly, async (req, res) => {
     const plans = await Plan.findAll({ order: [['sortOrder', 'ASC']] });
     // Attach payment count per plan
     const plansWithStats = await Promise.all(plans.map(async (plan) => {
-      const paymentsCount = await Payment.count({ where: { planId: plan.id, status: 'paid' } });
-      const totalRevenuePaise = await Payment.sum('amount', { where: { planId: plan.id, status: 'paid' } }) || 0;
-      return {
-        ...plan.toJSON(),
-        subscriberCount: paymentsCount,
-        revenueINR: (totalRevenuePaise / 100).toFixed(2)
-      };
+      try {
+        const paymentsCount = await Payment.count({ where: { planId: plan.id, status: 'paid' } });
+        const totalRevenuePaise = await Payment.sum('amount', { where: { planId: plan.id, status: 'paid' } }) || 0;
+        return {
+          ...plan.toJSON(),
+          subscriberCount: paymentsCount,
+          revenueINR: (totalRevenuePaise / 100).toFixed(2)
+        };
+      } catch (err) {
+        console.error('Error fetching stats for plan', plan.id, err.message);
+        return {
+          ...plan.toJSON(),
+          subscriberCount: 0,
+          revenueINR: '0.00'
+        };
+      }
     }));
     res.json(plansWithStats);
   } catch (error) {
@@ -308,6 +317,69 @@ router.put('/questions/:id', protect, adminOnly, async (req, res) => {
     res.json(question);
   } catch (error) {
     res.status(500).json({ message: 'Error updating question', error: error.message });
+  }
+});
+
+const banner = require('../config/banner');
+
+// ── Banner Announcement Control ──────────────────────────────────────────────
+
+router.get('/banner', (req, res) => {
+  res.json(banner);
+});
+
+router.post('/banner', protect, adminOnly, (req, res) => {
+  const { enabled, message, color, link } = req.body;
+
+  if (enabled !== undefined) banner.enabled = Boolean(enabled);
+  if (message !== undefined) banner.message = message;
+  if (color !== undefined) banner.color = color;
+  if (link !== undefined) banner.link = link;
+
+  console.log(`⚙ Announcement banner ${banner.enabled ? 'ENABLED' : 'DISABLED'} by admin`);
+  res.json({ success: true, banner });
+});
+
+// ── Admin Broadcast & Promotional Emails ──────────────────────────────────────
+
+router.post('/broadcast', protect, adminOnly, async (req, res) => {
+  const { subject, message, role } = req.body;
+  if (!subject || !message) {
+    return res.status(400).json({ message: 'subject and message are required fields' });
+  }
+
+  try {
+    const filter = {};
+    if (role && role !== 'all') filter.role = role;
+    
+    const users = await User.findAll({ where: filter });
+    if (users.length === 0) {
+      return res.json({ message: 'No registered users match this role criteria.' });
+    }
+
+    const emailUtils = require('../utils/email');
+    
+    // Dispatch emails
+    const sendPromises = users.map(user => {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <h2 style="color: #4f46e5; text-align: center; margin-bottom: 20px;">PrepAI Announcement</h2>
+          <p style="font-size: 16px; color: #1e293b;">Hi ${user.name || 'User'},</p>
+          <div style="line-height: 1.6; color: #334155; font-size: 15px; margin: 20px 0; white-space: pre-line;">
+            ${message}
+          </div>
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+          <p style="font-size: 11px; color: #94a3b8; text-align: center;">You are receiving this system update because you are registered on PrepAI. If you'd like to unsubscribe, please update your notifications settings.</p>
+        </div>
+      `;
+      return emailUtils.sendMail(user.email, subject, emailHtml)
+        .catch(err => console.error(`Failed to send system broadcast email to ${user.email}:`, err.message));
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, message: `Successfully sent promotional/broadcast emails to ${users.length} matching users.` });
+  } catch (error) {
+    res.status(500).json({ message: 'Error executing admin email broadcast', error: error.message });
   }
 });
 

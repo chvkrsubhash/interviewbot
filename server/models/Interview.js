@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const { applyQuery } = require('./User');
+const { executeEmulatedQuery } = require('./User');
 
 class Interview {
   constructor(data) {
@@ -92,10 +92,9 @@ async function loadAssociations(interviews, queryObj) {
 
 Interview.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('interviews'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    const interview = new Interview({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('interviews'), queryObj);
+    if (docs.length === 0) return null;
+    const interview = new Interview(docs[0]);
     await loadAssociations([interview], queryObj);
     return interview;
   } catch (error) {
@@ -120,9 +119,8 @@ Interview.findByPk = async function (id, queryObj = {}) {
 
 Interview.findAll = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('interviews'), queryObj);
-    const snap = await q.get();
-    const interviews = snap.docs.map(doc => new Interview({ id: doc.id, ...doc.data() }));
+    const docs = await executeEmulatedQuery(db.collection('interviews'), queryObj);
+    const interviews = docs.map(d => new Interview(d));
     await loadAssociations(interviews, queryObj);
     return interviews;
   } catch (error) {
@@ -144,9 +142,8 @@ Interview.create = async function (data = {}) {
 
 Interview.count = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('interviews'), queryObj);
-    const snap = await q.get();
-    return snap.size;
+    const docs = await executeEmulatedQuery(db.collection('interviews'), queryObj);
+    return docs.length;
   } catch (error) {
     console.error('Error in Interview.count:', error.message);
     throw error;

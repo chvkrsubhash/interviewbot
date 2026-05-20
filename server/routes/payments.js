@@ -4,6 +4,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { protect } = require('./auth');
 const { Payment, Plan, User } = require('../models');
+const { sendPaymentEmail } = require('../utils/sendPaymentEmail');
 
 // ─── Razorpay HTTP helpers (no npm package needed) ────────────────────────────
 
@@ -139,7 +140,8 @@ router.post('/verify', protect, async (req, res) => {
 
     payment.status = 'paid';
     payment.razorpayPaymentId = razorpay_payment_id;
-    payment.razorpaySignature = razorpay_signature;
+    await sendPaymentEmail(payment);
+
     await payment.save();
 
     res.json({ message: 'Payment verified successfully', payment });

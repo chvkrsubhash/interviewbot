@@ -8,7 +8,7 @@ import {
   ShieldAlert, ShieldCheck, Users, HardDrive, Scroll, RefreshCw, Loader2,
   AlertCircle, Search, UserX, UserCheck, IndianRupee, TrendingUp,
   CreditCard, Zap, Crown, Rocket, Plus, Pencil, Trash2, Check, X,
-  Wrench, Power, Save, AlertTriangle, CheckCircle2, Ban, Activity
+  Wrench, Power, Save, AlertTriangle, CheckCircle2, Ban, Activity, Megaphone, Send, ToggleLeft, ToggleRight, Link2
 } from 'lucide-react';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
@@ -76,7 +76,8 @@ export default function AdminDashboard() {
     '/admin/plans': 'Subscription Plan Management',
     '/admin/users': 'User Registry Management',
     '/admin/maintenance': 'Maintenance Mode Control',
-    '/admin/questions': 'Question Bank Management'
+    '/admin/questions': 'Question Bank Management',
+    '/admin/broadcast': 'Banner & Broadcast Center'
   };
 
   return (
@@ -88,6 +89,7 @@ export default function AdminDashboard() {
       {currentPath === '/admin/users' && <UserRegistryPanel users={filteredUsers} allUsers={users} loading={loadingUsers} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} onToggleBan={handleToggleBan} banningId={banningId} onRefresh={fetchUsers} />}
       {currentPath === '/admin/maintenance' && <MaintenancePanel token={token} />}
       {currentPath === '/admin/questions' && <QuestionsPanel token={token} />}
+      {currentPath === '/admin/broadcast' && <BroadcastPanel token={token} />}
     </div>
   );
 }
@@ -1455,6 +1457,288 @@ function QuestionsPanel({ token }) {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── 7. BANNER & BROADCAST PANEL ─────────────────────────────────────────────
+function BroadcastPanel({ token }) {
+  const [banner, setBanner] = useState({ enabled: false, message: '', color: 'indigo', link: '' });
+  const [bannerLoading, setBannerLoading] = useState(true);
+  const [bannerSaving, setBannerSaving] = useState(false);
+  const [bannerSaved, setBannerSaved] = useState(false);
+  const [subject, setSubject] = useState('');
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [targetRole, setTargetRole] = useState('all');
+  const [sending, setSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+  const [broadcastError, setBroadcastError] = useState('');
+
+  const colorOptions = [
+    { value: 'indigo', label: 'Indigo', cls: 'bg-indigo-500' },
+    { value: 'emerald', label: 'Emerald', cls: 'bg-emerald-500' },
+    { value: 'amber', label: 'Amber', cls: 'bg-amber-500' },
+    { value: 'rose', label: 'Rose', cls: 'bg-rose-500' },
+    { value: 'slate', label: 'Slate', cls: 'bg-slate-600' },
+    { value: 'orange', label: 'Orange', cls: 'bg-orange-500' }
+  ];
+
+  const previewBg = {
+    indigo: 'from-indigo-600 to-violet-600',
+    emerald: 'from-emerald-600 to-teal-600',
+    amber: 'from-amber-500 to-orange-500',
+    rose: 'from-rose-600 to-pink-600',
+    slate: 'from-slate-700 to-slate-800',
+    orange: 'from-orange-500 to-amber-600'
+  };
+
+  useEffect(() => {
+    fetch('/api/admin/banner', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setBanner(d); })
+      .finally(() => setBannerLoading(false));
+  }, []);
+
+  const handleBannerSave = async () => {
+    setBannerSaving(true);
+    setBannerSaved(false);
+    try {
+      const r = await fetch('/api/admin/banner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(banner)
+      });
+      if (r.ok) { setBannerSaved(true); setTimeout(() => setBannerSaved(false), 3000); }
+    } finally { setBannerSaving(false); }
+  };
+
+  const handleBroadcast = async () => {
+    if (!subject.trim() || !broadcastMsg.trim()) {
+      setBroadcastError('Subject and message are both required.');
+      return;
+    }
+    setSending(true);
+    setBroadcastResult(null);
+    setBroadcastError('');
+    try {
+      const r = await fetch('/api/admin/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ subject, message: broadcastMsg, role: targetRole })
+      });
+      const d = await r.json();
+      if (r.ok) { setBroadcastResult(d.message); setSubject(''); setBroadcastMsg(''); }
+      else { setBroadcastError(d.message || 'Broadcast failed.'); }
+    } catch (err) { setBroadcastError('Network error. Please try again.'); }
+    finally { setSending(false); }
+  };
+
+  if (bannerLoading) return (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 size={32} className="animate-spin text-primary-500" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+
+      {/* ─── Banner Customizer Card ─── */}
+      <div className="glass-premium rounded-3xl p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="w-10 h-10 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center">
+            <Megaphone size={22} />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-slate-800 dark:text-white">Announcement Banner</h3>
+            <p className="text-xs text-slate-400 font-medium">Configure a global banner shown to all logged-in users on every page.</p>
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            <span className={`text-xs font-extrabold uppercase ${banner.enabled ? 'text-emerald-500' : 'text-slate-400'}`}>
+              {banner.enabled ? '● Live' : '○ Off'}
+            </span>
+            <button
+              onClick={() => setBanner(b => ({ ...b, enabled: !b.enabled }))}
+              className={`relative w-12 h-6 rounded-full transition-all duration-300 ${banner.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${banner.enabled ? 'translate-x-6' : 'translate-x-0'}`}></span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Announcement Message</label>
+              <textarea
+                value={banner.message}
+                onChange={e => setBanner(b => ({ ...b, message: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-semibold text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                placeholder="🚀 New AI mock features are now live! Click to explore..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Action Link (optional)</label>
+              <input
+                type="url"
+                value={banner.link}
+                onChange={e => setBanner(b => ({ ...b, link: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-semibold text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                placeholder="https://prepai.com/new-features"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Banner Color Theme</label>
+              <div className="flex gap-2 flex-wrap">
+                {colorOptions.map(c => (
+                  <button
+                    key={c.value}
+                    onClick={() => setBanner(b => ({ ...b, color: c.value }))}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                      banner.color === c.value
+                        ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/20'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-400'
+                    }`}
+                  >
+                    <span className={`w-3 h-3 rounded-full ${c.cls}`}></span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Live Preview</label>
+            <div className={`rounded-2xl overflow-hidden shadow-lg bg-gradient-to-r ${previewBg[banner.color] || previewBg.indigo}`}>
+              <div className="px-4 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+                    <Megaphone size={12} className="text-white" />
+                  </div>
+                  <p className="text-white text-xs font-semibold">
+                    {banner.message || 'Your announcement message will appear here…'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {banner.link && (
+                    <span className="px-2.5 py-1 rounded-lg bg-white text-[10px] font-bold uppercase text-slate-700">
+                      Learn More
+                    </span>
+                  )}
+                  <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                    <X size={10} className="text-white" />
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 font-medium mt-2 italic">Live preview as seen by all users.</p>
+            <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-dark-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span>Banner status</span>
+                <span className={`font-bold ${banner.enabled ? 'text-emerald-500' : 'text-slate-400'}`}>{banner.enabled ? 'Showing globally' : 'Hidden'}</span>
+              </div>
+              <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span>Color theme</span>
+                <span className="font-bold text-slate-700 dark:text-slate-200 capitalize">{banner.color}</span>
+              </div>
+              <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span>Has action link</span>
+                <span className={`font-bold ${banner.link ? 'text-primary-500' : 'text-slate-400'}`}>{banner.link ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={handleBannerSave}
+            disabled={bannerSaving}
+            className="px-8 py-3 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-60 flex items-center gap-2 shadow-md shadow-primary-500/20"
+          >
+            {bannerSaving ? <Loader2 size={16} className="animate-spin" /> : bannerSaved ? <Check size={16} /> : <Save size={16} />}
+            {bannerSaving ? 'Saving...' : bannerSaved ? '✓ Saved!' : `Apply — Banner ${banner.enabled ? 'ON' : 'OFF'}`}
+          </button>
+          {bannerSaved && (
+            <span className="text-xs text-emerald-500 font-bold">
+              ✓ Changes applied. Banner is now {banner.enabled ? 'visible to all users.' : 'hidden.'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Promotional Email Broadcaster ─── */}
+      <div className="glass-premium rounded-3xl p-6 space-y-5">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+            <Send size={20} />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-slate-800 dark:text-white">Promotional Email Broadcaster</h3>
+            <p className="text-xs text-slate-400 font-medium">Dispatch rich HTML email notifications to all or selected user segments in one click.</p>
+          </div>
+        </div>
+
+        {broadcastResult && (
+          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold flex items-center gap-2">
+            <CheckCircle2 size={16} /> {broadcastResult}
+          </div>
+        )}
+        {broadcastError && (
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-400 text-sm font-semibold flex items-center gap-2">
+            <AlertTriangle size={16} /> {broadcastError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Subject *</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={e => { setSubject(e.target.value); setBroadcastError(''); }}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-semibold text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="📢 Important Update from PrepAI!"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target Audience</label>
+            <select
+              value={targetRole}
+              onChange={e => setTargetRole(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-slate-800 font-bold text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="all">All Users (Candidates + Recruiters)</option>
+              <option value="candidate">Candidates Only</option>
+              <option value="recruiter">Recruiters Only</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Message Body *</label>
+          <textarea
+            value={broadcastMsg}
+            onChange={e => { setBroadcastMsg(e.target.value); setBroadcastError(''); }}
+            rows={8}
+            className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-semibold text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+            placeholder={"Dear Candidate,\n\nWe are thrilled to announce new AI evaluation features...\n\nBest regards,\nThe PrepAI Team"}
+          />
+          <p className="text-[10px] text-slate-400 mt-1.5 font-medium">Supports HTML. Line breaks are preserved. Each email is automatically personalized with the recipient's name.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={handleBroadcast}
+            disabled={sending || !subject.trim() || !broadcastMsg.trim()}
+            className="px-8 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-primary-600 hover:from-indigo-700 hover:to-primary-700 text-white font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-primary-500/20"
+          >
+            {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {sending ? 'Dispatching Emails...' : 'Send Broadcast Email'}
+          </button>
+          <span className="text-xs text-slate-400 font-medium">Emails are dispatched in parallel to all matching registered users via SMTP.</span>
+        </div>
       </div>
     </div>
   );
