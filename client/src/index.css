@@ -1,0 +1,273 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply antialiased select-none transition-colors duration-300 bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100;
+    background-image: radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.02) 0%, transparent 40%),
+                      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.02) 0%, transparent 40%);
+  }
+
+  .dark body {
+    background-image: radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+                      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 40%);
+  }
+
+  /* Premium inputs focus styling */
+  input, textarea, select {
+    @apply transition-all duration-300;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    @apply border-primary-500/80 ring-4 ring-primary-500/10 shadow-lg shadow-primary-500/5 outline-none;
+  }
+}
+
+/* 🌀 Premium Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.35) 0%, rgba(99, 102, 241, 0.35) 100%);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* 🕸️ Cyber Grid Background for Tech/AI aesthetics */
+.bg-cyber-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+}
+
+.dark .bg-cyber-grid {
+  background-image: linear-gradient(to right, rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(30, 41, 59, 0.4) 1px, transparent 1px);
+}
+
+/* ✨ Custom Premium Glassmorphism Cards */
+.glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px 0 rgba(31, 38, 135, 0.02);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass-premium {
+  background: rgba(10, 18, 36, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+/* ⚡ Interactive Glassmorphism Hover Effects */
+.glass-premium-interactive {
+  @apply glass-premium transition-all duration-300 ease-out;
+}
+
+.glass-premium-interactive:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(14, 165, 233, 0.25);
+  box-shadow: 0 20px 40px -15px rgba(14, 165, 233, 0.1),
+              0 0 20px -5px rgba(14, 165, 233, 0.05);
+}
+
+.dark .glass-premium-interactive:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6),
+              0 0 25px -5px rgba(99, 102, 241, 0.15);
+}
+
+/* 🎯 Radial glowing effect decorators */
+.glow-spot-primary {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+.glow-spot-indigo {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+/* 🌟 Premium Text & Icon Glow */
+.text-glow {
+  text-shadow: 0 0 12px rgba(14, 165, 233, 0.35);
+}
+
+.text-glow-rose {
+  text-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
+}
+
+/* 💓 Custom Pulse Glowing Ring Matrices */
+.pulse-glow {
+  box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+  animation: pulse-glow-key-blue 2.5s infinite;
+}
+
+.pulse-glow-emerald {
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  animation: pulse-glow-key-emerald 2.5s infinite;
+}
+
+.pulse-glow-rose {
+  box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  animation: pulse-glow-key-rose 2.5s infinite;
+}
+
+@keyframes pulse-glow-key-blue {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px rgba(14, 165, 233, 0);
+  }
+  100% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+  }
+}
+
+@keyframes pulse-glow-key-emerald {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulse-glow-key-rose {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px rgba(244, 63, 94, 0);
+  }
+  100% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+}
+
+/* 🦴 Modern Skeleton Shimmer Effects */
+.skeleton-glow {
+  background: linear-gradient(90deg, 
+    rgba(226, 232, 240, 0.4) 25%, 
+    rgba(203, 213, 225, 0.7) 50%, 
+    rgba(226, 232, 240, 0.4) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+.dark .skeleton-glow {
+  background: linear-gradient(90deg, 
+    rgba(30, 41, 59, 0.3) 25%, 
+    rgba(51, 65, 85, 0.6) 50%, 
+    rgba(30, 41, 59, 0.3) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 🎓 Professional Certificate Backdrop Mock styles */
+.certificate-border {
+  border: 12px double #0ea5e9;
+  background-image: radial-gradient(circle, rgba(14, 165, 233, 0.03) 0%, transparent 100%);
+}
+
+.dark .certificate-border {
+  border: 12px double rgba(14, 165, 233, 0.3);
+  background-image: radial-gradient(circle, rgba(14, 165, 233, 0.05) 0%, transparent 100%);
+}
+
+/* 🌟 Shiny glass buttons */
+.btn-shiny {
+  @apply relative overflow-hidden transition-all duration-300;
+}
+
+.btn-shiny::after {
+  content: '';
+  @apply absolute top-0 -left-full w-1/2 h-full bg-white/20 transform skew-x-[-25deg] transition-all duration-1000 ease-out pointer-events-none;
+}
+
+.btn-shiny:hover::after {
+  @apply left-[150%];
+}
+
+/* 🎨 Shifting gradient backgrounds */
+.bg-shifting-gradient {
+  background: linear-gradient(-45deg, #0ea5e9, #6366f1, #d946ef, #10b981);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
