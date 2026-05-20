@@ -157,6 +157,31 @@ function runLocalSemanticAnalyzer(transcript, domain, experienceLevel, company) 
 
   const finalAggregate = Math.floor((techScore * 0.5) + (commScore * 0.3) + (confidenceScore * 0.2));
 
+  // Generate per-question AI critique remarks
+  const remarks = (transcript || []).map((item, idx) => {
+    const answer = (item.answer || '').toLowerCase().trim();
+    const wordCount = answer.split(/\s+/).filter(Boolean).length;
+    const usedKeywords = domainKeywords.filter(k => answer.includes(k));
+    const fillerHits = fillers.filter(f => new RegExp(`\\b${f}\\b`).test(answer));
+
+    if (wordCount < 8 || answer.includes('no verbal answer recorded')) {
+      return `Question ${idx + 1}: No substantial response was recorded. This question was left unanswered — attempt all questions to maximize your evaluation score.`;
+    }
+    if (usedKeywords.length >= 3) {
+      return `Question ${idx + 1}: Excellent domain-specific vocabulary demonstrated. Your use of terms like "${usedKeywords.slice(0, 2).join('", "')}" reflects strong conceptual depth. Consider adding structured examples to elevate clarity further.`;
+    }
+    if (fillerHits.length >= 2) {
+      return `Question ${idx + 1}: Your answer covers the key concept but relies on filler expressions ("${fillerHits[0]}"). Work on replacing conversational fillers with precise, structured statements for stronger interview presence.`;
+    }
+    if (wordCount > 80) {
+      return `Question ${idx + 1}: Thorough response covering the fundamentals well. To improve further, structure your answer using the STAR format — this will make your responses sharper and more interview-ready.`;
+    }
+    if (wordCount > 30) {
+      return `Question ${idx + 1}: Solid answer with good clarity. Adding 2-3 specific technical examples or real-world scenarios would significantly strengthen your response depth.`;
+    }
+    return `Question ${idx + 1}: Brief response detected. Elaborate your understanding — interviewers look for depth, context, and examples, not just a short answer.`;
+  });
+
   return {
     score: finalAggregate,
     technicalScore: techScore,
@@ -165,7 +190,8 @@ function runLocalSemanticAnalyzer(transcript, domain, experienceLevel, company) 
     grammarAnalysis,
     strengths,
     weaknesses,
-    suggestions
+    suggestions,
+    remarks
   };
 }
 

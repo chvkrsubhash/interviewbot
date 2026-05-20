@@ -23,35 +23,37 @@ const maintenanceMiddleware = (req, res, next) => {
   return res.sendFile(path.join(__dirname, '..', 'client', 'public', 'maintenance.html'));
 };
 
+// ── API Routes (MUST be before static/catch-all) ─────────────────────────────
+const { router: authRouter } = require('./routes/auth');
+const interviewRouter = require('./routes/interview');
+const candidateRouter = require('./routes/candidate');
+const recruiterRouter = require('./routes/recruiter');
+const adminRouter = require('./routes/admin');
+const paymentsRouter = require('./routes/payments');
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(maintenanceMiddleware);
 
-// Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Serve React client build
-app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
-
-// Fallback to index.html for client-side routing (excluding API routes)
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
-});
-
-const { router: authRouter } = require('./routes/auth');
-const interviewRouter = require('./routes/interview');
-const recruiterRouter = require('./routes/recruiter');
-const adminRouter = require('./routes/admin');
-const paymentsRouter = require('./routes/payments');
-
 app.use('/api/auth', authRouter);
 app.use('/api/interview', interviewRouter);
 app.use('/api/recruiter', recruiterRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/candidate', candidateRouter);
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve React client build (static assets)
+app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
+
+// Fallback to index.html for client-side routing (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
+});
 
 // Sync database and start server
 const PORT = process.env.PORT || 5000;
@@ -68,19 +70,19 @@ db.listCollections()
     try {
       const adminExists = await User.findOne({ where: { email: 'admin@prepai.com' } });
       if (!adminExists) {
-        await User.create({ name: 'PrepAI Administrator', email: 'admin@prepai.com', password: 'password123', role: 'admin', otp: null, otpExpiry: null });
+        await User.create({ name: 'PrepAI Administrator', email: 'admin@prepai.com', password: 'password123', role: 'admin', otp: null, otpExpiry: null, isVerified: true });
         console.log('✔ Seeded admin account: admin@prepai.com / password123');
       }
 
       const recruiterExists = await User.findOne({ where: { email: 'recruiter@prepai.com' } });
       if (!recruiterExists) {
-        await User.create({ name: 'PrepAI Recruiter', email: 'recruiter@prepai.com', password: 'password123', role: 'recruiter', otp: null, otpExpiry: null });
+        await User.create({ name: 'PrepAI Recruiter', email: 'recruiter@prepai.com', password: 'password123', role: 'recruiter', otp: null, otpExpiry: null, isVerified: true });
         console.log('✔ Seeded recruiter account: recruiter@prepai.com / password123');
       }
 
       const candidateExists = await User.findOne({ where: { email: 'candidate@prepai.com' } });
       if (!candidateExists) {
-        await User.create({ name: 'PrepAI Candidate', email: 'candidate@prepai.com', password: 'password123', role: 'candidate', otp: null, otpExpiry: null });
+        await User.create({ name: 'PrepAI Candidate', email: 'candidate@prepai.com', password: 'password123', role: 'candidate', otp: null, otpExpiry: null, isVerified: true });
         console.log('✔ Seeded candidate account: candidate@prepai.com / password123');
       }
     } catch (e) {

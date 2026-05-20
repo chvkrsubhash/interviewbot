@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const { applyQuery } = require('./User');
+const { executeEmulatedQuery } = require('./User');
 
 class Plan {
   constructor(data) {
@@ -11,6 +11,8 @@ class Plan {
     this.currency = data.currency || 'INR';
     this.billingInterval = data.billingInterval || 'monthly';
     this.interviewsAllowed = data.interviewsAllowed !== undefined ? Number(data.interviewsAllowed) : 5;
+    // New field: maximum interviews a user on this plan can schedule (null = unlimited)
+    this.maxInterviews = data.maxInterviews !== undefined ? Number(data.maxInterviews) : null;
     
     // Parse features array
     if (typeof data.features === 'string') {
@@ -53,6 +55,7 @@ class Plan {
       currency: this.currency,
       billingInterval: this.billingInterval,
       interviewsAllowed: this.interviewsAllowed,
+      maxInterviews: this.maxInterviews,
       features: this.features,
       isActive: this.isActive,
       badgeColor: this.badgeColor,
@@ -85,10 +88,9 @@ Plan.findByPk = async function (id) {
 
 Plan.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('plans'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    return new Plan({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('plans'), queryObj);
+    if (docs.length === 0) return null;
+    return new Plan(docs[0]);
   } catch (error) {
     console.error('Error in Plan.findOne:', error.message);
     throw error;
@@ -97,9 +99,8 @@ Plan.findOne = async function (queryObj = {}) {
 
 Plan.findAll = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('plans'), queryObj);
-    const snap = await q.get();
-    return snap.docs.map(doc => new Plan({ id: doc.id, ...doc.data() }));
+    const docs = await executeEmulatedQuery(db.collection('plans'), queryObj);
+    return docs.map(d => new Plan(d));
   } catch (error) {
     console.error('Error in Plan.findAll:', error.message);
     throw error;
@@ -119,9 +120,8 @@ Plan.create = async function (data = {}) {
 
 Plan.count = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('plans'), queryObj);
-    const snap = await q.get();
-    return snap.size;
+    const docs = await executeEmulatedQuery(db.collection('plans'), queryObj);
+    return docs.length;
   } catch (error) {
     console.error('Error in Plan.count:', error.message);
     throw error;

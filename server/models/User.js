@@ -2,39 +2,85 @@ const { db } = require('../config/firebase');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
-// Global helper to apply Sequelize where queries to Firestore
-function applyQuery(collectionRef, queryObj = {}) {
+// Resilient helper to query Firestore without triggering composite index requirements.
+// Equality filters on primitive values are performed database-side (leveraging Firestore automatic single-field indexes).
+// Complex filters, ordering, and slicing/limits are done in-memory.
+async function executeEmulatedQuery(collectionRef, queryObj = {}) {
   let q = collectionRef;
+  
   if (queryObj.where) {
-    Object.entries(queryObj.where).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+    // Only apply the FIRST simple equality filter database-side.
+    // This utilizes Firestore's automatic single-field indexes and avoids triggering any composite index requirement.
+    // All other filters, sorting, and limits are emulated in-memory below.
+    const simpleEntries = Object.entries(queryObj.where).filter(([key, value]) => {
+      return value !== undefined && value !== null && (value === null || typeof value !== 'object');
+    });
+    if (simpleEntries.length > 0) {
+      const [key, value] = simpleEntries[0];
+      q = q.where(key, '==', value);
+    }
+  }
+
+  const snap = await q.get();
+  let docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  // 1. Apply complex filters (e.g. operators Op.ne, Op.in) in-memory
+  if (queryObj.where) {
+    docs = docs.filter(docData => {
+      return Object.entries(queryObj.where).every(([key, value]) => {
+        if (value === undefined || value === null) return true;
+        const actualVal = docData[key];
+
         if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'Object') {
-          // Handle operator objects like [Op.ne], etc.
-          Object.getOwnPropertySymbols(value).concat(Object.keys(value)).forEach(sym => {
+          return Object.getOwnPropertySymbols(value).concat(Object.keys(value)).every(sym => {
             const symStr = String(sym);
+            const opVal = value[sym];
             if (symStr.includes('ne') || symStr.includes('!=') || symStr.includes('Op.ne')) {
-              q = q.where(key, '!=', value[sym]);
-            } else if (symStr.includes('in') || symStr.includes('Op.in')) {
-              q = q.where(key, 'in', value[sym]);
+              return actualVal !== opVal;
             }
+            if (symStr.includes('in') || symStr.includes('Op.in')) {
+              return Array.isArray(opVal) && opVal.includes(actualVal);
+            }
+            return true;
           });
-        } else {
-          q = q.where(key, '==', value);
         }
-      }
+
+        return actualVal === value;
+      });
     });
   }
+
+  // 2. Apply sorting in-memory
   if (queryObj.order) {
     const orderItem = queryObj.order[0];
     if (orderItem && Array.isArray(orderItem)) {
       const [field, direction] = orderItem;
-      q = q.orderBy(field, direction && direction.toLowerCase() === 'desc' ? 'desc' : 'asc');
+      const isDesc = direction && direction.toLowerCase() === 'desc';
+      docs.sort((a, b) => {
+        let valA = a[field];
+        let valB = b[field];
+
+        // Robust date parsing/comparison
+        if (typeof field === 'string' && (field.includes('Date') || field === 'createdAt' || field === 'updatedAt')) {
+          if (valA) valA = new Date(valA).getTime();
+          if (valB) valB = new Date(valB).getTime();
+        }
+
+        if (valA === undefined || valA === null) return 1;
+        if (valB === undefined || valB === null) return -1;
+        if (valA < valB) return isDesc ? 1 : -1;
+        if (valA > valB) return isDesc ? -1 : 1;
+        return 0;
+      });
     }
   }
+
+  // 3. Apply limit/slicing in-memory
   if (queryObj.limit !== undefined) {
-    q = q.limit(Number(queryObj.limit));
+    docs = docs.slice(0, Number(queryObj.limit));
   }
-  return q;
+
+  return docs;
 }
 
 class User {
@@ -54,6 +100,7 @@ class User {
     this.projects = Array.isArray(data.projects) ? data.projects : [];
     this.otp = data.otp || null;
     this.otpExpiry = data.otpExpiry ? new Date(data.otpExpiry) : null;
+    this.isVerified = data.isVerified !== undefined ? Boolean(data.isVerified) : false;
     this.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
     this.updatedAt = data.updatedAt ? new Date(data.updatedAt) : new Date();
 
@@ -112,6 +159,7 @@ class User {
       projects: this.projects,
       otp: this.otp,
       otpExpiry: this.otpExpiry ? this.otpExpiry.toISOString() : null,
+      isVerified: this.isVerified,
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString()
     };
@@ -127,10 +175,9 @@ class User {
 
 User.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('users'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    return new User({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('users'), queryObj);
+    if (docs.length === 0) return null;
+    return new User(docs[0]);
   } catch (error) {
     console.error('Error in User.findOne:', error.message);
     throw error;
@@ -151,9 +198,8 @@ User.findByPk = async function (id) {
 
 User.findAll = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('users'), queryObj);
-    const snap = await q.get();
-    return snap.docs.map(doc => new User({ id: doc.id, ...doc.data() }));
+    const docs = await executeEmulatedQuery(db.collection('users'), queryObj);
+    return docs.map(d => new User(d));
   } catch (error) {
     console.error('Error in User.findAll:', error.message);
     throw error;
@@ -173,15 +219,14 @@ User.create = async function (data = {}) {
 
 User.count = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('users'), queryObj);
-    const snap = await q.get();
-    return snap.size;
+    const docs = await executeEmulatedQuery(db.collection('users'), queryObj);
+    return docs.length;
   } catch (error) {
     console.error('Error in User.count:', error.message);
     throw error;
   }
 };
 
-User.applyQuery = applyQuery; // Export query builder for reuse in other models
+User.executeEmulatedQuery = executeEmulatedQuery; // Export helper on User class
 
 module.exports = User;

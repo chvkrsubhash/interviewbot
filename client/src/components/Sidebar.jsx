@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Video, Code2, Trophy, Users, FolderKanban,
   FileSpreadsheet, LogOut, ShieldCheck, CalendarCheck,
-  BadgeIndianRupee, CreditCard, Wrench, IndianRupee, Settings, Zap, User
+  BadgeIndianRupee, CreditCard, Wrench, IndianRupee, Settings, Zap, User, Megaphone
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -28,6 +28,7 @@ export default function Sidebar() {
           { to: '/admin/questions', name: 'Manage Questions', icon: <FileSpreadsheet size={18} /> },
           { to: '/admin/users', name: 'Manage Users', icon: <Users size={18} /> },
           { to: '/admin/maintenance', name: 'Maintenance Mode', icon: <Wrench size={18} /> },
+          { to: '/admin/broadcast', name: 'Banner & Broadcast', icon: <Megaphone size={18} /> },
           { to: '/admin/templates', name: 'Templates', icon: <FolderKanban size={18} /> },
         ];
       case 'recruiter':

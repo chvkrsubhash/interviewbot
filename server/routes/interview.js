@@ -199,8 +199,10 @@ Please evaluate and respond ONLY with a JSON object of the following format:
   "grammarAnalysis": "detailed string of grammar & articulation analysis",
   "strengths": ["strength 1", "strength 2", "strength 3"],
   "weaknesses": ["weakness 1", "weakness 2"],
-  "suggestions": ["suggestion 1", "suggestion 2"]
+  "suggestions": ["suggestion 1", "suggestion 2"],
+  "remarks": ["critique for question 1 answer", "critique for question 2 answer", "critique for question 3 answer", "critique for question 4 answer"]
 }
+The "remarks" array must have exactly ${(transcript || []).length} entries — one focused critique per answer (50-80 words each), noting vocabulary usage, depth, clarity, and improvement tips.
 Do not include markdown format or extra commentary, return only valid raw JSON.`;
         const responseText = await callGemini(prompt);
         const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -229,7 +231,7 @@ Do not include markdown format or extra commentary, return only valid raw JSON.`
     interview.cheated = totalSwitches > 0;
     await interview.save();
 
-    // Persist Feedback record to database
+    // Persist Feedback record to database, mapping remarks into each transcript item
     const feedback = await Feedback.create({
       interviewId: interview.id,
       technicalScore: evaluation.technicalScore,
@@ -239,7 +241,12 @@ Do not include markdown format or extra commentary, return only valid raw JSON.`
       strengths: evaluation.strengths,
       weaknesses: evaluation.weaknesses,
       suggestions: evaluation.suggestions,
-      transcript: transcript || []
+      transcript: (transcript || []).map((item, idx) => ({
+        ...item,
+        remarks: (evaluation.remarks && evaluation.remarks[idx])
+          ? evaluation.remarks[idx]
+          : `Your answer for question ${idx + 1} demonstrated basic understanding. Focus on adding concrete examples and technical depth to stand out in real interviews.`
+      }))
     });
 
     // Update user streak and last active timestamp

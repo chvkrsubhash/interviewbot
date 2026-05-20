@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const { applyQuery } = require('./User');
+const { executeEmulatedQuery } = require('./User');
 
 class Question {
   constructor(data) {
@@ -100,10 +100,9 @@ Question.findByPk = async function (id) {
 
 Question.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('questions'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    return new Question({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('questions'), queryObj);
+    if (docs.length === 0) return null;
+    return new Question(docs[0]);
   } catch (error) {
     console.error('Error in Question.findOne:', error.message);
     throw error;
@@ -112,9 +111,8 @@ Question.findOne = async function (queryObj = {}) {
 
 Question.findAll = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('questions'), queryObj);
-    const snap = await q.get();
-    return snap.docs.map(doc => new Question({ id: doc.id, ...doc.data() }));
+    const docs = await executeEmulatedQuery(db.collection('questions'), queryObj);
+    return docs.map(d => new Question(d));
   } catch (error) {
     console.error('Error in Question.findAll:', error.message);
     throw error;
@@ -134,9 +132,8 @@ Question.create = async function (data = {}) {
 
 Question.count = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('questions'), queryObj);
-    const snap = await q.get();
-    return snap.size;
+    const docs = await executeEmulatedQuery(db.collection('questions'), queryObj);
+    return docs.length;
   } catch (error) {
     console.error('Error in Question.count:', error.message);
     throw error;

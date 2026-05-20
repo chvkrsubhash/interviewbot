@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const { applyQuery } = require('./User');
+const { executeEmulatedQuery } = require('./User');
 
 class Payment {
   constructor(data) {
@@ -109,10 +109,9 @@ async function loadAssociations(payments, queryObj) {
 
 Payment.findOne = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('payments'), queryObj);
-    const snap = await q.limit(1).get();
-    if (snap.empty) return null;
-    const payment = new Payment({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    const docs = await executeEmulatedQuery(db.collection('payments'), queryObj);
+    if (docs.length === 0) return null;
+    const payment = new Payment(docs[0]);
     await loadAssociations([payment], queryObj);
     return payment;
   } catch (error) {
@@ -123,9 +122,8 @@ Payment.findOne = async function (queryObj = {}) {
 
 Payment.findAll = async function (queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('payments'), queryObj);
-    const snap = await q.get();
-    const payments = snap.docs.map(doc => new Payment({ id: doc.id, ...doc.data() }));
+    const docs = await executeEmulatedQuery(db.collection('payments'), queryObj);
+    const payments = docs.map(d => new Payment(d));
     await loadAssociations(payments, queryObj);
     return payments;
   } catch (error) {
@@ -147,11 +145,10 @@ Payment.create = async function (data = {}) {
 
 Payment.sum = async function (field, queryObj = {}) {
   try {
-    const q = applyQuery(db.collection('payments'), queryObj);
-    const snap = await q.get();
+    const docs = await executeEmulatedQuery(db.collection('payments'), queryObj);
     let sum = 0;
-    snap.docs.forEach(doc => {
-      const val = doc.data()[field];
+    docs.forEach(doc => {
+      const val = doc[field];
       if (val !== undefined && val !== null) {
         sum += Number(val);
       }
