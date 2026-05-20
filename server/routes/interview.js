@@ -112,6 +112,13 @@ Respond ONLY with a JSON array of strings containing the 4 questions, e.g., ["qu
       questions: questions
     });
 
+    // After interview is created, send scheduling email to candidate
+    const emailUtils = require('../utils/email');
+    const interviewDetails = interview;
+    const emailHtml = `<p>Dear ${req.user.name},</p><p>Your interview "${interviewDetails.title}" has been scheduled successfully.</p><p>Domain: ${interviewDetails.domain}<br/>Experience Level: ${interviewDetails.experienceLevel}<br/>Type: ${interviewDetails.type}</p><p>Good luck!</p>`;
+    emailUtils.sendMail(req.user.email, 'Interview Scheduled', emailHtml)
+      .then(() => console.log('Scheduling email sent'))
+      .catch(err => console.error('Failed to send scheduling email:', err));
     res.status(201).json(interview);
   } catch (error) {
     res.status(500).json({ message: 'Error instantiating interview setup', error: error.message });

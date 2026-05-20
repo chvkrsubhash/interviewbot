@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+// Load env variables immediately
 const dotenv = require('dotenv');
 
-// Load env variables immediately
 dotenv.config();
 
+const path = require('path');
 const { db } = require('./config/firebase');
 
 // ── Shared maintenance mode state (separate module to avoid circular require)
@@ -13,17 +13,14 @@ const maintenanceMode = require('./config/maintenance');
 
 const app = express();
 
-// Maintenance mode middleware — blocks all API except admin and auth
+// Maintenance mode middleware — blocks all routes except auth and admin
 const maintenanceMiddleware = (req, res, next) => {
   if (!maintenanceMode.enabled) return next();
-  // Allow admin and auth routes through maintenance
-  const allowed = ['/api/auth', '/api/admin'];
+  // Allow auth and admin routes through maintenance
+  const allowed = ['/api/auth', '/api/admin', '/admin'];
   if (allowed.some(prefix => req.path.startsWith(prefix))) return next();
-  return res.status(503).json({
-    maintenance: true,
-    message: maintenanceMode.message,
-    estimatedTime: maintenanceMode.estimatedTime
-  });
+  // Serve static maintenance page for all other requests
+  return res.sendFile(path.join(__dirname, '..', 'client', 'public', 'maintenance.html'));
 };
 
 // Middlewares
@@ -34,6 +31,15 @@ app.use(maintenanceMiddleware);
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve React client build
+app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
+
+// Fallback to index.html for client-side routing (excluding API routes)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
+});
 
 const { router: authRouter } = require('./routes/auth');
 const interviewRouter = require('./routes/interview');
