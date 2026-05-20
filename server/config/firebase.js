@@ -215,7 +215,8 @@ if (hasEnvKeys || hasJsonFile) {
     admin = require('firebase-admin');
     if (hasEnvKeys) {
       console.log('⚡ Initializing Firebase Admin SDK via environment variables...');
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+      const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+      const privateKey = rawKey.replace(/\\n/g, '\n').replace(/^"|"$/g, '');
       admin.initializeApp({
         credential: admin.credential.cert({
           projectId: process.env.FIREBASE_PROJECT_ID,

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+let pdfParse; try { pdfParse = require('pdf-parse'); } catch (e) { console.warn('pdf-parse not installed; resume parsing disabled'); pdfParse = null; }
 const path = require('path');
 const fs = require('fs');
 
@@ -61,12 +61,17 @@ router.post('/parse-resume', upload.single('resume'), async (req, res) => {
     }
     // Extract text from PDF (if PDF). For DOC/DOCX we fallback to empty string for now.
     let rawText = '';
-    if (req.file.mimetype === 'application/pdf') {
-      rawText = (await pdfParse(req.file.buffer)).text;
-    } else {
-      // In a full implementation, you'd use a library like "docx" or "mammoth".
-      rawText = '';
-    }
+      if (req.file.mimetype === 'application/pdf') {
+        if (pdfParse) {
+          rawText = (await pdfParse(req.file.buffer)).text;
+        } else {
+          console.warn('pdf-parse module not available; skipping PDF parsing');
+          rawText = '';
+        }
+      } else {
+        // In a full implementation, you'd use a library like "docx" or "mammoth".
+        rawText = '';
+      }
     const skills = extractSkills(rawText);
     const { domain, exp } = detectDomainAndExp(req.file.originalname);
     return res.json({ detectedDomain: domain, detectedExp: exp, skills });
