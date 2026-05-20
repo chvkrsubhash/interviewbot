@@ -216,7 +216,7 @@ router.post('/forgot-password', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-<<<<<<< HEAD
+
   /*
 =======
   router.post('/login', async (req, res) => {

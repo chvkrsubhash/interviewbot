@@ -45,26 +45,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(maintenanceMiddleware);
 
-<<<<<<< HEAD
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Register API routes
-=======
->>>>>>> b623a394938160d86341de5fb930dc544f34cb3b
 app.use('/api/auth', authRouter);
 app.use('/api/interview', interviewRouter);
 app.use('/api/recruiter', recruiterRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/candidate', candidateRouter);
-
-<<<<<<< HEAD
-
-=======
-// Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
->>>>>>> b623a394938160d86341de5fb930dc544f34cb3b
 
 // Serve React client build (static assets)
 app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
@@ -187,11 +177,31 @@ async function initAndSeed() {
 initAndSeed();
 
 // Start listening when running directly (not via Vercel serverless)
+// Error handling middleware – ensures all errors are returned as JSON
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  const status = err.status || 500;
+  res.status(status).json({ message: err.message || 'Server error', error: err.stack });
+});
+
+// Start server with port fallback if 5000 is in use
+const startServer = (port) => {
+  app.listen(port, () => console.log(`✔ Express server running on http://localhost:${port}`))
+    .on('error', (e) => {
+      if (e.code === 'EADDRINUSE') {
+        console.warn(`Port ${port} in use, trying next port`);
+        startServer(port + 1);
+      } else {
+        console.error('Failed to start server:', e);
+      }
+    });
+};
+
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`✔ Express server running locally on http://localhost:${PORT}`);
-  });
+  const basePort = PORT ? parseInt(PORT, 10) : 5000;
+  startServer(basePort);
 }
+
 
 // Export app for Vercel serverless handler
 module.exports = app;
