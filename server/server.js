@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-// Load env variables immediately
+const path = require('path');
 const dotenv = require('dotenv');
 
+// Load env variables immediately
 dotenv.config();
 
-const path = require('path');
 const { db } = require('./config/firebase');
 
 // ── Shared maintenance mode state (separate module to avoid circular require)
@@ -13,33 +13,32 @@ const maintenanceMode = require('./config/maintenance');
 
 const app = express();
 
-// Maintenance mode middleware — blocks all routes except auth and admin
+// Maintenance mode middleware — blocks all API except admin and auth
 const maintenanceMiddleware = (req, res, next) => {
   if (!maintenanceMode.enabled) return next();
-  // Allow auth and admin routes through maintenance
-  const allowed = ['/api/auth', '/api/admin', '/admin'];
+  const allowed = ['/api/auth', '/api/admin'];
   if (allowed.some(prefix => req.path.startsWith(prefix))) return next();
-  // Serve static maintenance page for all other requests
-  return res.sendFile(path.join(__dirname, '..', 'client', 'public', 'maintenance.html'));
+  return res.status(503).json({
+    maintenance: true,
+    message: maintenanceMode.message,
+    estimatedTime: maintenanceMode.estimatedTime
+  });
 };
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(maintenanceMiddleware);
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Serve React client build
-app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
-
-// Fallback to index.html for client-side routing (excluding API routes)
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
-});
 
 const { router: authRouter } = require('./routes/auth');
 const interviewRouter = require('./routes/interview');
@@ -53,18 +52,17 @@ app.use('/api/recruiter', recruiterRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 
-// Sync database and start server
 const PORT = process.env.PORT || 5000;
 
-// Test Firestore connection and trigger seeding
-db.listCollections()
-  .then(async () => {
+async function initAndSeed() {
+  try {
+    await db.listCollections();
     console.log('✔ Firebase Firestore database connection active.');
 
     const User = require('./models/User');
     const Plan = require('./models/Plan');
 
-    // ── Seed default testing accounts ──────────────────────────────────────
+    // ── Seed default testing accounts
     try {
       const adminExists = await User.findOne({ where: { email: 'admin@prepai.com' } });
       if (!adminExists) {
@@ -87,7 +85,7 @@ db.listCollections()
       console.warn('⚠️ Account seeding failed:', e.message);
     }
 
-    // ── Seed default subscription plans (INR) ──────────────────────────────
+    // ── Seed default subscription plans (INR)
     try {
       const planCount = await Plan.count();
       if (planCount === 0) {
@@ -113,7 +111,7 @@ db.listCollections()
           {
             name: 'Pro Learner',
             description: 'Ideal for serious job seekers preparing for placements.',
-            price: 49900,    // ₹499 in paise
+            price: 49900,
             currency: 'INR',
             billingInterval: 'monthly',
             interviewsAllowed: 20,
@@ -133,10 +131,10 @@ db.listCollections()
           {
             name: 'Elite Placement',
             description: 'For power users targeting FAANG and top-tier companies.',
-            price: 99900,    // ₹999 in paise
+            price: 99900,
             currency: 'INR',
             billingInterval: 'monthly',
-            interviewsAllowed: -1,  // unlimited
+            interviewsAllowed: -1,
             isActive: true,
             isPopular: false,
             badgeColor: 'orange',
@@ -158,16 +156,20 @@ db.listCollections()
       console.warn('⚠️ Plan seeding failed:', e.message);
     }
 
-    // Only start listening when running directly (not via Vercel serverless)
-    if (require.main === module) {
-      app.listen(PORT, () => {
-        console.log(`✔ Express server running locally on http://localhost:${PORT}`);
-      });
-    }
-  })
-  .catch(err => {
+  } catch (err) {
     console.error('❌ Failed to establish Firebase connection:', err.message);
+  }
+}
+
+// Fire-and-forget — does NOT block the export
+initAndSeed();
+
+// Start listening when running directly (not via Vercel serverless)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`✔ Express server running locally on http://localhost:${PORT}`);
   });
+}
 
 // Export app for Vercel serverless handler
 module.exports = app;
