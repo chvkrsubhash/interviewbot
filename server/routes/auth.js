@@ -216,7 +216,11 @@ router.post('/forgot-password', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+<<<<<<< HEAD
   /*
+=======
+  router.post('/login', async (req, res) => {
+>>>>>>> b623a394938160d86341de5fb930dc544f34cb3b
   const { email, password } = req.body;
   try {
     const isFirebaseLive = process.env.FIREBASE_PROJECT_ID && !process.env.FIREBASE_PROJECT_ID.includes('your-');

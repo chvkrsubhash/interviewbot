@@ -45,10 +45,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(maintenanceMiddleware);
 
+<<<<<<< HEAD
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Register API routes
+=======
+>>>>>>> b623a394938160d86341de5fb930dc544f34cb3b
 app.use('/api/auth', authRouter);
 app.use('/api/interview', interviewRouter);
 app.use('/api/recruiter', recruiterRouter);
@@ -56,7 +59,12 @@ app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/candidate', candidateRouter);
 
+<<<<<<< HEAD
 
+=======
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+>>>>>>> b623a394938160d86341de5fb930dc544f34cb3b
 
 // Serve React client build (static assets)
 app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
