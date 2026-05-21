@@ -18,8 +18,7 @@ export function Login() {
     setLoading(true);
     try {
       const loggedUser = await login(email, password);
-      if (loggedUser.role === 'admin') navigate('/admin');
-      else if (loggedUser.role === 'recruiter') navigate('/recruiter');
+      if (loggedUser.role === 'recruiter') navigate('/recruiter');
       else navigate('/candidate');
     } catch (err) {
       setError(err.message || 'Invalid email or password');
@@ -179,8 +178,8 @@ export function Signup() {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Role</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['candidate', 'recruiter', 'admin'].map((r) => (
+            <div className="grid grid-cols-2 gap-2">
+              {['candidate', 'recruiter'].map((r) => (
                 <button
                   key={r}
                   type="button"
