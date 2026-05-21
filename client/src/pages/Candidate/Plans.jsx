@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header';
+import { useAuth } from '../../context/AuthContext';
 import { Check, Zap, Crown, Rocket, Loader2, AlertCircle, CreditCard, IndianRupee, Star } from 'lucide-react';
 
 // Load Razorpay checkout.js dynamically
@@ -45,6 +46,9 @@ const PLAN_COLORS = {
 };
 
 export default function PlansPage() {
+  const { user: authUser, updateProfile } = useAuth();
+  // planId is stored as authUser.plan.planId (from /api/user/plan-status response)
+  const isCurrentPlan = (plan) => authUser?.plan?.planId === plan.id;
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState('');
@@ -56,12 +60,18 @@ export default function PlansPage() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [plansRes, historyRes] = await Promise.all([
+        const [plansRes, historyRes, planStatusRes] = await Promise.all([
           fetch('/api/payments/plans'),
-          fetch('/api/payments/history', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch('/api/payments/history', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/user/plan-status', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         if (plansRes.ok) setPlans(await plansRes.json());
         if (historyRes.ok) setPaymentHistory(await historyRes.json());
+        // Sync the latest plan status into the auth context so isCurrentPlan is accurate
+        if (planStatusRes.ok) {
+          const planData = await planStatusRes.json();
+          if (updateProfile) updateProfile({ plan: planData });
+        }
       } catch (err) {
         setErrorMessage('Failed to load plans. Please try again.');
       } finally {
@@ -152,6 +162,12 @@ export default function PlansPage() {
             const hRes = await fetch('/api/payments/history', { headers: { 'Authorization': `Bearer ${token}` } });
             if (hRes.ok) setPaymentHistory(await hRes.json());
 
+            // Refresh user plan status and update auth context
+            const planRes = await fetch('/api/user/plan-status', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (planRes.ok) {
+              const planData = await planRes.json();
+              if (updateProfile) updateProfile({ plan: planData });
+            }
           } catch (err) {
             setErrorMessage(`Payment recorded but verification failed: ${err.message}. Please contact support.`);
           } finally {
@@ -264,15 +280,17 @@ export default function PlansPage() {
 
               <button
                 onClick={() => handleSubscribe(plan)}
-                disabled={paying === plan.id || (plan.price === 0)}
+                disabled={paying === plan.id || plan.price === 0 || isCurrentPlan(plan)}
                 className={`mt-6 w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2 ${
-                  plan.price === 0 ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default' : colors.btn
+                  plan.price === 0 || isCurrentPlan(plan) ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default' : colors.btn
                 }`}
               >
                 {paying === plan.id ? (
                   <><Loader2 size={16} className="animate-spin" /> Processing...</>
+                ) : isCurrentPlan(plan) ? (
+                  'Current Plan'
                 ) : plan.price === 0 ? (
-                  'Current Free Plan'
+                  'Free Plan'
                 ) : (
                   <>Pay {formatINR(plan.price)} via Razorpay</>
                 )}

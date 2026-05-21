@@ -140,9 +140,16 @@ router.post('/verify', protect, async (req, res) => {
 
     payment.status = 'paid';
     payment.razorpayPaymentId = razorpay_payment_id;
-    await sendPaymentEmail(payment);
-
     await payment.save();
+
+    // ✅ Update the user's active plan in the database
+    const user = await User.findByPk(req.user.id);
+    if (user) {
+      user.plan = payment.planId;
+      await user.save();
+    }
+
+    await sendPaymentEmail(payment);
 
     res.json({ message: 'Payment verified successfully', payment });
   } catch (error) {

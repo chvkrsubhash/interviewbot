@@ -10,7 +10,7 @@ class Plan {
     this.price = data.price !== undefined ? Number(data.price) : 0; // in paise
     this.currency = data.currency || 'INR';
     this.billingInterval = data.billingInterval || 'monthly';
-    this.interviewsAllowed = data.interviewsAllowed !== undefined ? Number(data.interviewsAllowed) : 5;
+    this.interviewsAllowed = data.interviewsAllowed !== undefined ? Number(data.interviewsAllowed) : 1;
     // New field: maximum interviews a user on this plan can schedule (null = unlimited)
     this.maxInterviews = data.maxInterviews !== undefined ? Number(data.maxInterviews) : null;
     

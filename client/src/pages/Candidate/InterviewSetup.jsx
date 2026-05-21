@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import {
@@ -41,7 +41,34 @@ export default function InterviewSetup() {
   const [interviewType, setInterviewType] = useState('technical');
   const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [planStatus, setPlanStatus] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
+const [error, setError] = useState('');
+
+  // Fetch plan status on mount
+  useEffect(() => {
+    const fetchPlanStatus = async () => {
+      setPlanLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/user/plan-status', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch plan status');
+        setPlanStatus(data);
+      } catch (err) {
+        console.error('Plan status fetch error:', err);
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+    fetchPlanStatus();
+  }, []);
+
+  const canStartInterview = planStatus === null
+    ? true  // still loading — optimistically allow
+    : planStatus.canStartInterview === true;
 
   // Resume parsing states
   const [resume, setResume] = useState(null);
@@ -239,16 +266,50 @@ export default function InterviewSetup() {
             </div>
           )}
 
+          {/* Plan usage status bar */}
+          {planStatus && (
+            <div className={`p-4 rounded-2xl text-sm font-semibold border flex items-center justify-between gap-3 ${
+              canStartInterview
+                ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-400'
+            }`}>
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>
+                  <span className="font-bold">{planStatus.planName}</span> plan ·{' '}
+                  {planStatus.interviewsAllowed === -1
+                    ? 'Unlimited interviews'
+                    : `${planStatus.completedInterviews} / ${planStatus.interviewsAllowed} interviews used this month`}
+                </span>
+              </div>
+              {!canStartInterview && (
+                <button
+                  onClick={() => navigate('/candidate/plans')}
+                  className="shrink-0 px-3 py-1 rounded-lg bg-primary-500 text-white text-xs font-bold hover:bg-primary-600 transition-colors"
+                >
+                  Upgrade
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             onClick={handleStartSimulation}
-            disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-primary-500/15 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            disabled={loading || planLoading || !canStartInterview}
+            className="w-full py-4 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-primary-500/15 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
                 Generating AI Questions...
               </>
+            ) : planLoading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Checking plan limits...
+              </>
+            ) : !canStartInterview ? (
+              'Interview limit reached — Upgrade to continue'
             ) : (
               <>
                 Launch Interview Environment <ArrowRight size={18} />

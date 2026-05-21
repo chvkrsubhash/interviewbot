@@ -3,7 +3,7 @@ import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
 import { 
   User, Mail, Shield, Award, BookOpen, Cpu, Briefcase, Plus, Trash2, 
-  Save, Loader2, CheckCircle2, AlertCircle, Calendar, Hash, Globe, Github
+  Save, Loader2, CheckCircle2, AlertCircle, Calendar, Hash, Globe, Github, Zap
 } from 'lucide-react';
 
 export default function CandidateProfile() {
@@ -28,9 +28,28 @@ export default function CandidateProfile() {
   const [newSkill, setNewSkill] = useState('');
   
   const token = localStorage.getItem('token');
+  const [planInfo, setPlanInfo] = useState(null);
 
   useEffect(() => {
+    // fetch profile as before
     fetchProfile();
+    // fetch plan status
+    const fetchPlan = async () => {
+      try {
+        const res = await fetch('/api/user/plan-status', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setPlanInfo(data);
+          // Update auth context user with latest plan
+          if (updateProfile) {
+            updateProfile({ plan: data });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch plan status', e);
+      }
+    };
+    fetchPlan();
   }, []);
 
   const fetchProfile = async () => {
@@ -226,9 +245,9 @@ export default function CandidateProfile() {
                   <span className="inline-flex self-center md:self-auto items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary-500/10 text-primary-500 uppercase border border-primary-500/20">
                     <Shield size={12} /> {authUser?.role || 'Candidate'}
                   </span>
-                  {authUser?.plan?.name && (
+                  {(authUser?.plan?.planName || planInfo?.planName) && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 uppercase border border-emerald-500/20 ml-2">
-                      <Zap size={12} /> {authUser.plan.name}
+                      <Zap size={12} /> {authUser?.plan?.planName || planInfo?.planName}
                     </span>
                   )}
                 </h3>

@@ -34,6 +34,7 @@ const recruiterRouter = require('./routes/recruiter');
 const adminRouter = require('./routes/admin');
 const paymentsRouter = require('./routes/payments');
 
+const userRouter = require('./routes/user');
 // Middlewares
 app.use(cors({
   origin: process.env.CLIENT_ORIGIN || true,
@@ -56,6 +57,7 @@ app.use('/api/recruiter', recruiterRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/candidate', candidateRouter);
+app.use('/api/user', userRouter);
 
 // Serve React client build (static assets) if it exists
 if (fs.existsSync(path.join(__dirname, '..', 'client', 'dist'))){
