@@ -90,6 +90,7 @@ class User {
     this.email = data.email || '';
     this.password = data.password || '';
     this.role = data.role || 'candidate';
+    this.plan = data.plan || 'free'; // new field
     this.streak = data.streak !== undefined ? Number(data.streak) : 0;
     this.lastActive = data.lastActive ? new Date(data.lastActive) : new Date();
     this.isBanned = data.isBanned !== undefined ? Boolean(data.isBanned) : false;
@@ -149,6 +150,7 @@ class User {
       email: this.email,
       password: this.password,
       role: this.role,
+      plan: this.plan,
       streak: this.streak,
       lastActive: this.lastActive.toISOString(),
       isBanned: this.isBanned,

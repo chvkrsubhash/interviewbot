@@ -202,21 +202,35 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Forgot password endpoint – sends a dummy reset link (placeholder implementation)
-router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required' });
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    // In a real system we would generate a token and email a reset link.
-    // Here we simply respond with success for the UI flow.
-    res.json({ message: 'Password reset instructions sent to your email (simulated).' });
-  } catch (err) {
-    console.error('Forgot password error:', err.message);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
+  // Forgot password endpoint – send Firebase reset link
+  router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+    try {
+      // Verify user exists (optional)
+      const user = await User.findOne({ where: { email } });
+      if (!user) return res.status(404).json({ message: 'User not found' });
+      // Generate secure password reset link via Firebase Admin SDK
+      const resetLink = await admin.auth().generatePasswordResetLink(email, {
+        // Optional: specify continue URL after reset (client side route)
+        url: process.env.CLIENT_ORIGIN ? `${process.env.CLIENT_ORIGIN}/reset-password` : 'http://localhost:3000/reset-password'
+      });
+      // Send email using existing utility
+      const emailHtml = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <h2 style="color:#4f46e5; text-align:center; margin-bottom:24px; font-size:24px; font-weight:700;">Reset Your PrepAI Password</h2>
+          <p style="font-size:15px; color:#334155; line-height:1.5;">Click the button below to set a new password for your account.</p>
+          <a href="${resetLink}" style="display:inline-block; margin-top:20px; padding:12px 24px; background:#4f46e5; color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">Reset Password</a>
+          <p style="font-size:12px; color:#64748b; margin-top:30px;">If you did not request a password reset, you can safely ignore this email.</p>
+        </div>`;
+      const emailUtils = require('../utils/email');
+      await emailUtils.sendMail(email, 'PrepAI Password Reset', emailHtml);
+      res.json({ message: 'Password reset email sent (simulated).' });
+    } catch (err) {
+      console.error('Forgot password error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
 
   /*
 =======

@@ -220,14 +220,8 @@ export default function PlansPage() {
           return (
             <div
               key={plan.id}
-              className={`relative rounded-3xl border-2 p-8 flex flex-col justify-between bg-gradient-to-br transition-all hover:shadow-xl ${colors.gradient} ${colors.border} ${plan.isPopular ? 'scale-[1.02] shadow-lg' : ''}`}
+              className={`relative rounded-3xl border-2 p-8 flex flex-col justify-between bg-gradient-to-br transition-all hover:shadow-xl ${colors.gradient} ${colors.border}`}
             >
-              {plan.isPopular && (
-                <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-md flex items-center gap-1 ${colors.badge}`}>
-                  <Star size={10} fill="currentColor" /> Most Popular
-                </div>
-              )}
-
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colors.icon}`}>

@@ -493,9 +493,6 @@ function PlansPanel({ token }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div key={plan.id} className="glass-premium rounded-3xl p-6 space-y-4 relative">
-              {plan.isPopular && (
-                <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-full bg-primary-500 text-white text-[9px] font-extrabold uppercase tracking-wider">Popular</div>
-              )}
               {!plan.isActive && (
                 <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-full bg-slate-500/20 text-slate-500 text-[9px] font-extrabold uppercase tracking-wider">Inactive</div>
               )}
