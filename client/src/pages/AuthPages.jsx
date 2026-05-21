@@ -241,14 +241,26 @@ export function ForgotPassword() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to send reset email');
       setSuccess(true);
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      alert(err.message);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-tr from-slate-100 via-slate-50 to-indigo-50/30 dark:from-dark-950 dark:via-dark-900 dark:to-indigo-950/20">

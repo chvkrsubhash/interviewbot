@@ -25,6 +25,7 @@ export default function Sidebar() {
           { to: '/admin', name: 'Overview', icon: <LayoutDashboard size={18} /> },
           { to: '/admin/income', name: 'Income & Revenue', icon: <IndianRupee size={18} /> },
           { to: '/admin/plans', name: 'Manage Plans', icon: <Zap size={18} /> },
+          { to: '/admin/user-plans', name: 'User Plans', icon: <BadgeIndianRupee size={18} /> },
           { to: '/admin/questions', name: 'Manage Questions', icon: <FileSpreadsheet size={18} /> },
           { to: '/admin/users', name: 'Manage Users', icon: <Users size={18} /> },
           { to: '/admin/maintenance', name: 'Maintenance Mode', icon: <Wrench size={18} /> },

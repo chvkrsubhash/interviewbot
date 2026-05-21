@@ -226,6 +226,11 @@ export default function CandidateProfile() {
                   <span className="inline-flex self-center md:self-auto items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary-500/10 text-primary-500 uppercase border border-primary-500/20">
                     <Shield size={12} /> {authUser?.role || 'Candidate'}
                   </span>
+                  {authUser?.plan?.name && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 uppercase border border-emerald-500/20 ml-2">
+                      <Zap size={12} /> {authUser.plan.name}
+                    </span>
+                  )}
                 </h3>
                 <p className="text-slate-400 text-sm font-semibold flex items-center justify-center md:justify-start gap-1.5 mt-1">
                   <Mail size={14} /> {profile.email}

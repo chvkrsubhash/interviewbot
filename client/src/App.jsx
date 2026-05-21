@@ -23,6 +23,7 @@ import RecruiterDashboard from './pages/Recruiter/Dashboard';
 // Admin portal
 import AdminDashboard from './pages/Admin/Dashboard';
 import AdminTemplates from './pages/Admin/Templates';
+import UserPlansPage from './pages/Admin/UserPlansPage';
 
 // Sidebar
 import Sidebar from './components/Sidebar';
@@ -231,7 +232,15 @@ export default function App() {
               }
             />
 
-            {/* Catch-all fallback redirect */}
+            <Route
+  path="/admin/user-plans"
+  element={
+    <ProtectedRoute allowedRoles={['admin']}>
+      <UserPlansPage />
+    </ProtectedRoute>
+  }
+/>
+{/* Catch-all fallback redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

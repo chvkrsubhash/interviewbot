@@ -16,7 +16,7 @@ const adminOnly = (req, res, next) => {
 router.get('/users', protect, adminOnly, async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'name', 'email', 'role', 'streak', 'isBanned', 'lastActive', 'createdAt'],
+      attributes: ['id', 'name', 'email', 'role', 'streak', 'isBanned', 'lastActive', 'createdAt', 'plan'],
       order: [['createdAt', 'DESC']]
     });
 
@@ -396,3 +396,21 @@ router.delete('/questions/:id', protect, adminOnly, async (req, res) => {
 });
 
 module.exports = router;
+
+// Update a user's plan
+router.put('/users/:id/plan', protect, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const { planId } = req.body;
+    if (!planId) return res.status(400).json({ message: 'planId is required' });
+    // Validate plan exists
+    const plan = await Plan.findByPk(planId);
+    if (!plan) return res.status(400).json({ message: 'Invalid planId' });
+    user.plan = planId;
+    await user.save();
+    res.json({ message: 'User plan updated', userId: user.id, planId: planId });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user plan', error: error.message });
+  }
+});
